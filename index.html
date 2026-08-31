@@ -315,88 +315,6 @@
     display:flex; gap:8px; margin-top:20px;
   }
   footer.actions .btn{flex:1;}
-
-  /* Confirm modal */
-  .modal-overlay{
-    position:fixed; inset:0;
-    background:rgba(2,10,24,0.75);
-    display:flex; align-items:center; justify-content:center;
-    z-index:100;
-    padding:20px;
-  }
-  .modal-card{
-    background:var(--deep2);
-    border:1px solid var(--ice);
-    border-radius:6px;
-    padding:22px;
-    max-width:400px;
-    width:100%;
-  }
-  .modal-card h3{
-    font-family:'Archivo Black',sans-serif;
-    font-size:18px;
-    margin:0 0 10px;
-    color:var(--ice);
-  }
-  .modal-card p{font-size:14px; line-height:1.5; color:var(--paper); margin:0 0 18px;}
-  .modal-card .modal-btns{display:flex; gap:10px;}
-  .modal-card .modal-btns .btn{flex:1;}
-
-  /* Hidden admin trigger */
-  .ghost-dot{
-    position:fixed;
-    bottom:10px;
-    right:14px;
-    width:14px;
-    height:14px;
-    border-radius:50%;
-    background:transparent;
-    border:none;
-    padding:0;
-    cursor:pointer;
-    z-index:50;
-    opacity:0.35;
-  }
-  .ghost-dot::after{
-    content:"";
-    display:block;
-    width:5px; height:5px;
-    margin:4.5px auto;
-    border-radius:50%;
-    background:var(--boreal);
-  }
-  .admin-menu{
-    position:fixed;
-    bottom:30px;
-    right:14px;
-    background:var(--deep2);
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:6px;
-    z-index:51;
-    display:flex;
-    flex-direction:column;
-    gap:2px;
-    min-width:170px;
-  }
-  .admin-menu button{
-    background:none; border:none; color:var(--paper);
-    text-align:left; padding:8px 10px; font-size:13px;
-    font-family:'Inter',sans-serif; cursor:pointer; border-radius:3px;
-  }
-  .admin-menu button:hover{background:var(--deep);}
-
-  /* Admin editor page */
-  .admin-row{
-    display:flex; gap:6px; align-items:center;
-    padding:8px 0; border-bottom:1px solid var(--line);
-    flex-wrap:wrap; font-size:13px;
-  }
-  .admin-row .pickno{min-width:80px; color:#8fb3c9; font-size:12px;}
-  .admin-row select{
-    background:var(--deep); color:var(--paper); border:1px solid var(--line);
-    border-radius:3px; padding:6px; font-size:13px; flex:1; min-width:140px;
-  }
 </style>
 </head>
 <body>
@@ -408,7 +326,6 @@
 
 <nav id="nav"></nav>
 <main id="main"></main>
-<div id="modal-root"></div>
 
 <script>
 (function(){
@@ -672,80 +589,6 @@
     saveState(); render();
   }
 
-  // ---------- confirm modal ----------
-  let pendingAction = null; // {type:'pair'|'four', gameId}
-
-  function askConfirm(type, gameId){
-    pendingAction = {type, gameId};
-    render();
-  }
-  function cancelConfirm(){ pendingAction = null; render(); }
-  function confirmAction(){
-    if(!pendingAction) return;
-    const {type, gameId} = pendingAction;
-    pendingAction = null;
-    if(type==="pair") claimPair(gameId);
-    else if(type==="four") claimFour(gameId);
-  }
-
-  function renderConfirmModal(){
-    if(!pendingAction) return null;
-    const idx = currentPickIndex();
-    if(idx===-1){ pendingAction=null; return null; }
-    const owner = ownerById(state.order[idx]);
-    const g = gameById(pendingAction.gameId);
-    if(!g){ pendingAction=null; return null; }
-    const seats = pendingAction.type==="four" ? 4 : 2;
-    const cost = pendingAction.type==="four" ? g.cost : perSeat(g)*2;
-    const skipNote = pendingAction.type==="four" ? " This will also skip your next pick." : "";
-    const overlay = el("div",{class:"modal-overlay", onclick:(e)=>{ if(e.target===e.currentTarget) cancelConfirm(); }});
-    const card = el("div",{class:"modal-card"},[
-      el("h3",{},[txt("Confirm Pick")]),
-      el("p",{},[txt(`${owner.name}: take ${seats} seat${seats>1?"s":""} to ${gameLabel(g)} (${g.date}) for ${money(cost)}?${skipNote}`)]),
-      el("div",{class:"modal-btns"},[
-        el("button",{class:"btn btn-ghost", onclick:cancelConfirm},[txt("Cancel")]),
-        el("button",{class:"btn btn-primary", style:"width:auto;", onclick:confirmAction},[txt("Confirm Pick")])
-      ])
-    ]);
-    overlay.appendChild(card);
-    return overlay;
-  }
-
-  // ---------- admin: manual pick editor ----------
-  function recomputeGameRemaining(){
-    state.games.forEach(g=>g.remaining=4);
-    Object.values(state.picks).forEach(p=>{
-      if(p.type==="pair"){ const g=gameById(p.gameId); if(g) g.remaining -= 2; }
-      else if(p.type==="four"){ const g=gameById(p.gameId); if(g) g.remaining -= 4; }
-    });
-  }
-  function seatsAssignedToGame(gameId, excludeIdx){
-    let sum = 0;
-    Object.entries(state.picks).forEach(([i,p])=>{
-      if(Number(i)===excludeIdx) return;
-      if(p.gameId!==gameId) return;
-      sum += p.type==="four" ? 4 : (p.type==="pair" ? 2 : 0);
-    });
-    return sum;
-  }
-  function adminSetPick(idx, action, gameId, seats){
-    if(action==="clear"){
-      delete state.picks[idx];
-    } else if(action==="skip"){
-      state.picks[idx] = {type:"skip"};
-    } else {
-      const already = seatsAssignedToGame(gameId, idx);
-      if(already + seats > 4){
-        alert(`Can't assign ${seats} seats \u2014 that game already has ${already} of 4 seats claimed elsewhere.`);
-        return;
-      }
-      state.picks[idx] = {type: seats===4?"four":"pair", gameId};
-    }
-    recomputeGameRemaining();
-    state.phase = currentPickIndex()===-1 ? "complete" : "drafting";
-    saveState(); render();
-  }
-
   // ---------- rendering ----------
   function el(tag, attrs, children){
     const e = document.createElement(tag);
@@ -778,6 +621,12 @@
       if(disabled) b.style.opacity="0.25";
       nav.appendChild(b);
     });
+  }
+
+  function renderAdminLink(){
+    return el("p", {style:"text-align:center;margin-top:18px;"}, [
+      el("a", {href:"#", style:"color:#5f8aa3;font-size:12px;text-decoration:underline;cursor:pointer;", onclick:(e)=>{e.preventDefault(); view="setup"; render();}}, [txt("Edit setup (owners, games, costs)")])
+    ]);
   }
 
   function renderSetup(){
@@ -910,12 +759,12 @@
           gc.appendChild(el("div",{class:"glabel"},[txt(gameLabel(g))]));
           gc.appendChild(el("div",{class:"gdate"},[txt(`${g.date} · ${g.time} · ${g.remaining} seat${g.remaining===1?"":"s"} left`)]));
           const btns = el("div",{class:"gbtns"});
-          const pairBtn = el("button",{class:"pickbtn", onclick:()=>askConfirm("pair", g.id)},[
+          const pairBtn = el("button",{class:"pickbtn", onclick:()=>claimPair(g.id)},[
             txt("Take 2 Seats"), el("small",{},[txt(money(perSeat(g)*2))])
           ]);
           btns.appendChild(pairBtn);
           if(g.remaining===4 && canTakeFour){
-            const fourBtn = el("button",{class:"pickbtn four", onclick:()=>askConfirm("four", g.id)},[
+            const fourBtn = el("button",{class:"pickbtn four", onclick:()=>claimFour(g.id)},[
               txt("Take All 4 (skips next pick)"), el("small",{},[txt(money(g.cost))])
             ]);
             btns.appendChild(fourBtn);
@@ -928,6 +777,7 @@
 
     const actions = el("footer",{class:"actions"});
     actions.appendChild(el("button",{class:"btn btn-ghost", onclick:undoLast},[txt("Undo Last Pick")]));
+    actions.appendChild(el("button",{class:"btn btn-ghost", onclick:reshuffle},[txt("Re-Roll Order")]));
     wrap.appendChild(actions);
     wrap.appendChild(renderAdminLink());
     return wrap;
@@ -1002,9 +852,6 @@
     if(view==="setup") main.appendChild(renderSetup());
     else if(view==="draft") main.appendChild(renderDraft());
     else main.appendChild(renderResults());
-
-    const modal = renderConfirmModal();
-    if(modal) document.body.appendChild(modal);
   }
 
   loadState();
