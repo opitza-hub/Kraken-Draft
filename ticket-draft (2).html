@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Draft Picks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#041E42;
+    --deep2:#062851;
+    --ice:#99D9D9;
+    --boreal:#355464;
+    --red:#E9072B;
+    --paper:#F0F5F5;
+    --line: rgba(153,217,217,0.18);
+    --gold:#E8C468;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #0b3a63 0%, var(--deep) 55%),
+      var(--deep);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  .display{font-family:'Archivo Black',sans-serif; letter-spacing:0.5px;}
+  .cond{font-family:'Barlow Condensed',sans-serif; text-transform:uppercase; letter-spacing:1.5px;}
+
+  header{
+    padding:28px 20px 20px;
+    border-bottom:2px solid var(--line);
+    position:relative;
+    overflow:hidden;
+  }
+  header::before{
+    content:"";
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(115deg, transparent 0 40px, rgba(153,217,217,0.04) 40px 41px);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:'Barlow Condensed',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:3px;
+    font-size:12px;
+    color:var(--ice);
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:'Archivo Black',sans-serif;
+    font-size:28px;
+    margin:0;
+    line-height:1.05;
+  }
+  h1 span{color:var(--ice);}
+
+  nav{
+    display:flex;
+    gap:0;
+    border-bottom:2px solid var(--line);
+    position:sticky; top:0; z-index:10;
+    background:var(--deep);
+  }
+  nav button{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--paper);
+    opacity:0.5;
+    padding:14px 6px;
+    font-family:'Barlow Condensed',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+  }
+  nav button.active{
+    opacity:1;
+    color:var(--ice);
+    border-bottom-color:var(--red);
+  }
+
+  main{padding:20px;max-width:640px;margin:0 auto;}
+
+  .card{
+    background:var(--deep2);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .card h2{
+    font-family:'Barlow Condensed',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    font-size:15px;
+    color:var(--ice);
+    margin:0 0 12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card h2 .num{
+    background:var(--boreal);
+    color:var(--paper);
+    width:22px;height:22px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;
+    font-family:'Inter',sans-serif;
+    letter-spacing:0;
+  }
+
+  input[type=text], input[type=number]{
+    width:100%;
+    background:var(--deep);
+    border:1px solid var(--line);
+    color:var(--paper);
+    padding:10px 12px;
+    border-radius:3px;
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+  }
+  input:focus{outline:1px solid var(--ice);}
+  label{font-size:12px; color:var(--ice); text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px;}
+
+  .row{display:flex; gap:8px; margin-bottom:8px; align-items:center;}
+  .row input[type=text]{flex:2;}
+  .row input[type=number]{flex:1; text-align:center;}
+  .row .costcell{flex:1; text-align:center;}
+
+  .chip-btn, .btn{
+    font-family:'Barlow Condensed',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    font-weight:600;
+    font-size:14px;
+    border-radius:3px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--paper);
+    padding:10px 14px;
+    cursor:pointer;
+  }
+  .btn-primary{
+    background:var(--red);
+    border-color:var(--red);
+    color:white;
+    width:100%;
+    padding:13px;
+    font-size:16px;
+  }
+  .btn-primary:disabled{opacity:0.35; cursor:not-allowed;}
+  .btn-ghost{background:transparent; color:var(--ice); border-color:var(--boreal);}
+  .icon-btn{
+    background:none; border:none; color:var(--red); font-size:20px; cursor:pointer; line-height:1; padding:4px 8px;
+  }
+
+  .list-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+    gap:8px;
+  }
+  .list-item:last-child{border-bottom:none;}
+  .list-item .meta{color:#8fb3c9; font-size:12px;}
+
+  .settings-grid{display:flex; gap:10px;}
+  .settings-grid > div{flex:1;}
+  .hint{font-size:12px; color:#8fb3c9; margin-top:8px; line-height:1.5;}
+
+  /* Draft screen */
+  .clock{
+    background: linear-gradient(135deg, var(--boreal), var(--deep2));
+    border:1px solid var(--ice);
+    border-radius:6px;
+    padding:20px;
+    text-align:center;
+    margin-bottom:16px;
+    position:relative;
+  }
+  .clock .pickno{
+    font-family:'Barlow Condensed',sans-serif;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    font-size:13px;
+    color:var(--ice);
+  }
+  .clock .who{
+    font-family:'Archivo Black',sans-serif;
+    font-size:30px;
+    margin:6px 0;
+  }
+  .clock .subtxt{font-size:13px; color:#c9dbe4;}
+
+  .game-card{
+    background:var(--deep);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .game-card .glabel{font-size:15px; margin-bottom:2px;}
+  .game-card .gdate{font-size:12px; color:#8fb3c9; margin-bottom:10px;}
+  .game-card .gbtns{display:flex; gap:8px; flex-wrap:wrap;}
+  .pickbtn{
+    flex:1;
+    min-width:130px;
+    background:var(--boreal);
+    border:1px solid var(--ice);
+    color:var(--paper);
+    padding:9px 10px;
+    border-radius:3px;
+    cursor:pointer;
+    font-family:'Barlow Condensed',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    font-size:13px;
+    font-weight:600;
+    line-height:1.3;
+  }
+  .pickbtn.four{background:var(--red); border-color:var(--red);}
+  .pickbtn small{display:block; font-family:'Inter',sans-serif; text-transform:none; letter-spacing:0; font-size:11px; opacity:0.85; font-weight:400;}
+
+  .order-strip{
+    display:flex;
+    overflow-x:auto;
+    gap:6px;
+    padding:4px 0 10px;
+  }
+  .pip{
+    flex:0 0 auto;
+    min-width:38px;
+    height:38px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:700;
+    border:1px solid var(--line);
+    background:var(--deep2);
+    color:var(--paper);
+    text-align:center;
+    position:relative;
+  }
+  .pip.done{background:var(--boreal); opacity:0.6;}
+  .pip.skip{background:transparent; border-style:dashed; opacity:0.5;}
+  .pip.current{background:var(--red); border-color:var(--red); color:white; transform:scale(1.15);}
+
+  .owner-tag{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:20px;
+    font-size:11px;
+    font-family:'Barlow Condensed',sans-serif;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    background:var(--boreal);
+    color:var(--paper);
+  }
+  .cost-tag{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:20px;
+    font-size:11px;
+    font-family:'Barlow Condensed',sans-serif;
+    letter-spacing:0.5px;
+    background:rgba(232,196,104,0.15);
+    color:var(--gold);
+  }
+
+  .results-owner{margin-bottom:18px;}
+  .results-owner h3{
+    font-family:'Archivo Black',sans-serif;
+    font-size:16px;
+    color:var(--ice);
+    margin:0 0 8px;
+    padding-bottom:6px;
+    border-bottom:2px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:8px;
+  }
+  .results-owner h3 .total{font-family:'Barlow Condensed',sans-serif; font-size:14px; color:var(--gold);}
+
+  .empty{
+    text-align:center;
+    padding:40px 16px;
+    color:#7fa2b8;
+    font-size:14px;
+  }
+  .empty .display{font-size:18px; color:var(--ice); display:block; margin-bottom:8px;}
+
+  .banner{
+    background:rgba(153,217,217,0.08);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:10px 12px;
+    font-size:12px;
+    color:#a9c7d6;
+    margin-bottom:14px;
+    line-height:1.5;
+  }
+
+  footer.actions{
+    display:flex; gap:8px; margin-top:20px;
+  }
+  footer.actions .btn{flex:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">2026-2027 Kraken Season</p>
+  <h1>GAME DRAFT <span>PICKS</span></h1>
+</header>
+
+<nav id="nav"></nav>
+<main id="main"></main>
+
+<script>
+(function(){
+  // ====================================================================
+  // BACKEND CONFIG — paste your Google Apps Script Web App URL below.
+  // See the setup guide for how to get this URL (takes ~5 minutes,
+  // no coding, free Google account). Until this is set, the app runs
+  // in local-only preview mode so you can still see how it looks.
+  // ====================================================================
+  const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIXoWus47D9-UgrY0abaQD6z3SzWEztR18Erw_m82arqIENOCbzlZcmhkgsnWBOJhVWQ/exec";
+  const STATE_KEY = "ticket-draft-state-v2";
+
+  const BACKEND_READY = APP_SCRIPT_URL.indexOf("https://script.google.com") === 0;
+
+  let state = null;
+  let view = "setup";
+  let loaded = false;
+  let saveError = false;
+
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+  function money(n){ return "$" + n.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+  // Pre-loaded from the group's schedule + invoice
+  const SEED_GAMES = [
+    ["Sep 19, 2026","Sat, 6:00 PM","Vancouver Canucks",300, true],
+    ["Oct 6, 2026","Tue, 6:40 PM","Vegas Golden Knights",460, false],
+    ["Oct 22, 2026","Thu, 7:00 PM","Utah Mammoth",340, false],
+    ["Oct 24, 2026","Sat, 7:00 PM","Minnesota Wild",560, false],
+    ["Nov 4, 2026","Wed, 7:00 PM","Calgary Flames",340, false],
+    ["Nov 23, 2026","Mon, 6:40 PM","Anaheim Ducks",420, false],
+    ["Nov 25, 2026","Wed, 6:40 PM","Chicago Blackhawks",640, false],
+    ["Dec 3, 2026","Thu, 7:00 PM","Dallas Stars",420, false],
+    ["Dec 10, 2026","Thu, 6:30 PM","Washington Capitals",420, false],
+    ["Dec 12, 2026","Sat, 7:00 PM","Nashville Predators",460, false],
+    ["Dec 22, 2026","Tue, 6:40 PM","San Jose Sharks",420, false],
+    ["Jan 3, 2027","Sun, 5:00 PM","Vancouver Canucks",560, false],
+    ["Jan 5, 2027","Tue, 6:40 PM","Tampa Bay Lightning",340, false],
+    ["Jan 18, 2027","Mon, 1:00 PM","Columbus Blue Jackets",420, false],
+    ["Feb 3, 2027","Wed, 6:40 PM","Montreal Canadiens",460, false],
+    ["Feb 15, 2027","Mon, 1:00 PM","Pittsburgh Penguins",640, false],
+    ["Feb 17, 2027","Wed, 6:40 PM","Ottawa Senators",340, false],
+    ["Feb 22, 2027","Mon, 6:40 PM","Boston Bruins",560, false],
+    ["Mar 13, 2027","Sat, 7:00 PM","Edmonton Oilers",640, false],
+    ["Mar 15, 2027","Mon, 6:40 PM","St. Louis Blues",460, false],
+    ["Mar 21, 2027","Sun, 5:00 PM","Los Angeles Kings",460, false],
+    ["Apr 3, 2027","Sat, 4:00 PM","Winnipeg Jets",460, false]
+  ];
+  const SEED_OWNERS = [
+    ["Adam/Malia",18],
+    ["Ku'ulei",16],
+    ["Ryan",14],
+    ["Tim/Melissa",14],
+    ["Kacie",14],
+    ["Barber",12]
+  ];
+
+  const defaultState = () => ({
+    owners: SEED_OWNERS.map(([name,tickets])=>({id:uid(), name, tickets})),
+    games: SEED_GAMES.map(([date,time,opp,cost,preseason])=>({
+      id:uid(), date, time, opponent:opp, cost, preseason, remaining:4
+    })),
+    settings: { snakeStart: 2, snakeEnd: 2 },
+    order: [],         // array of ownerId, one per turn (turn = a pair)
+    picks: {},         // turnIndex -> {type:'pair'|'four'|'skip', gameId?}
+    actionLog: [],      // [{idxs:[...], gameId, amount}]
+    phase: "setup"
+  });
+
+  // ---------- remote storage (Google Sheet via Apps Script) ----------
+  async function remoteGet(key){
+    const res = await fetch(`${APP_SCRIPT_URL}?key=${encodeURIComponent(key)}`);
+    if(!res.ok) throw new Error("bad response");
+    const data = await res.json();
+    return data && data.value ? JSON.parse(data.value) : null;
+  }
+  async function remoteSet(key, value){
+    const res = await fetch(APP_SCRIPT_URL, {
+      method: "POST",
+      headers: {"Content-Type": "text/plain;charset=utf-8"}, // avoids CORS preflight
+      body: JSON.stringify({key, value: JSON.stringify(value)})
+    });
+    if(!res.ok) throw new Error("bad response");
+  }
+
+  async function loadState(){
+    if(!BACKEND_READY){
+      state = defaultState();
+      loaded = true;
+      render();
+      return;
+    }
+    try{
+      const val = await remoteGet(STATE_KEY);
+      state = val || defaultState();
+      saveError = false;
+    }catch(e){
+      state = defaultState();
+      saveError = true;
+    }
+    loaded = true;
+    if(state.phase && state.phase !== "setup") view = state.phase === "complete" ? "results" : "draft";
+    render();
+  }
+
+  async function saveState(){
+    if(!BACKEND_READY) return;
+    try{ await remoteSet(STATE_KEY, state); saveError = false; }
+    catch(e){ saveError = true; render(); }
+  }
+
+  // ---------- helpers ----------
+
+  function gameById(id){ return state.games.find(g=>g.id===id); }
+  function ownerById(id){ return state.owners.find(o=>o.id===id); }
+  function gameLabel(g){ return (g.preseason?"Preseason: ":"") + "vs " + g.opponent; }
+  function perSeat(g){ return g.cost/4; }
+  function totalTickets(){ return state.owners.reduce((s,o)=>s+(o.tickets||0),0); }
+  function totalTurns(){ return state.owners.reduce((s,o)=>s+Math.floor((o.tickets||0)/2),0); }
+  function poolTotal(){ return state.games.reduce((s,g)=>s+(g.cost||0),0); }
+
+  // ---------- draft order (in "turns"; 1 turn = 1 pair of seats) ----------
+  function buildDraftOrder(){
+    const owners = state.owners.map(o => ({id:o.id, remaining: Math.floor(o.tickets/2)}));
+    const byId = Object.fromEntries(owners.map(o=>[o.id,o]));
+    let order = [];
+    const shuffled = [...owners].sort(()=>Math.random()-0.5);
+    const ids = shuffled.map(o=>o.id);
+
+    function snakeRound(forward){
+      const seq = forward ? ids : [...ids].slice().reverse();
+      seq.forEach(id=>{
+        if(byId[id].remaining > 0){ order.push(id); byId[id].remaining -= 1; }
+      });
+    }
+    for(let r=0; r<state.settings.snakeStart; r++) snakeRound(r % 2 === 0);
+
+    // reserve end-phase turns against current remaining, before doing middle
+    const reserved = {}; ids.forEach(id=>reserved[id]=0);
+    for(let r=0; r<state.settings.snakeEnd; r++){
+      const seq = r % 2 === 0 ? ids : [...ids].slice().reverse();
+      seq.forEach(id=>{
+        if(byId[id].remaining - reserved[id] > 0) reserved[id] += 1;
+      });
+    }
+
+    const hat = [];
+    ids.forEach(id=>{
+      const middleCount = byId[id].remaining - reserved[id];
+      for(let i=0;i<middleCount;i++) hat.push(id);
+    });
+    for(let i=hat.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [hat[i],hat[j]] = [hat[j],hat[i]];
+    }
+    order = order.concat(hat);
+    hat.forEach(id=>{ byId[id].remaining -= 1; });
+
+    for(let r=0; r<state.settings.snakeEnd; r++) snakeRound(r % 2 === 0);
+
+    return order;
+  }
+
+  // ---------- setup actions ----------
+  function addOwner(){ state.owners.push({id:uid(), name:"", tickets:2}); saveState(); render(); }
+  function removeOwner(id){ state.owners = state.owners.filter(o=>o.id!==id); saveState(); render(); }
+  function updateOwner(id, field, val){
+    const o = state.owners.find(o=>o.id===id);
+    if(o) o[field] = field==="tickets" ? Math.max(0, parseInt(val)||0) : val;
+    saveState();
+  }
+  function updateGameCost(id, val){
+    const g = gameById(id);
+    if(g) g.cost = Math.max(0, parseFloat(val)||0);
+    saveState();
+  }
+
+  function canGenerate(){
+    const evenOk = state.owners.every(o=>o.tickets>0 && o.tickets%2===0);
+    return state.owners.length>=2 && evenOk &&
+      state.owners.every(o=>o.name.trim()) &&
+      state.games.length>0 &&
+      totalTickets() === state.games.length*4;
+  }
+
+  function generateDraft(){
+    state.games.forEach(g=>g.remaining=4);
+    state.order = buildDraftOrder();
+    state.picks = {};
+    state.actionLog = [];
+    state.phase = "drafting";
+    view = "draft";
+    saveState(); render();
+  }
+
+  function reshuffle(){
+    if(!confirm("Re-roll the draft order? This clears any picks made so far.")) return;
+    generateDraft();
+  }
+
+  // ---------- draft mechanics ----------
+  function currentPickIndex(){
+    for(let i=0;i<state.order.length;i++){ if(!(i in state.picks)) return i; }
+    return -1;
+  }
+  function nextTurnIndexFor(ownerId, afterIdx){
+    for(let j=afterIdx+1;j<state.order.length;j++){
+      if(state.order[j]===ownerId && !(j in state.picks)) return j;
+    }
+    return -1;
+  }
+
+  function claimPair(gameId){
+    const idx = currentPickIndex();
+    if(idx===-1) return;
+    const g = gameById(gameId);
+    if(!g || g.remaining < 2) return;
+    state.picks[idx] = {type:"pair", gameId};
+    g.remaining -= 2;
+    state.actionLog.push({idxs:[idx], gameId, amount:2});
+    afterPick();
+  }
+
+  function claimFour(gameId){
+    const idx = currentPickIndex();
+    if(idx===-1) return;
+    const ownerId = state.order[idx];
+    const g = gameById(gameId);
+    if(!g || g.remaining !== 4) return;
+    const skipIdx = nextTurnIndexFor(ownerId, idx);
+    if(skipIdx === -1) return; // no future turn to skip; button shouldn't be shown
+    state.picks[idx] = {type:"four", gameId};
+    state.picks[skipIdx] = {type:"skip"};
+    g.remaining -= 4;
+    state.actionLog.push({idxs:[idx, skipIdx], gameId, amount:4});
+    afterPick();
+  }
+
+  function afterPick(){
+    if(currentPickIndex()===-1){ state.phase="complete"; view="results"; }
+    saveState(); render();
+  }
+
+  function undoLast(){
+    const last = state.actionLog.pop();
+    if(!last) return;
+    const g = gameById(last.gameId);
+    if(g) g.remaining += last.amount;
+    last.idxs.forEach(i=>delete state.picks[i]);
+    if(state.phase==="complete"){ state.phase="drafting"; view="draft"; }
+    saveState(); render();
+  }
+
+  function resetAll(){
+    if(!confirm("Start a brand new draft? This erases all picks for everyone (owners, games, and costs stay).")) return;
+    state.games.forEach(g=>g.remaining=4);
+    state.order = [];
+    state.picks = {};
+    state.actionLog = [];
+    state.phase = "setup";
+    view = "setup";
+    saveState(); render();
+  }
+
+  // ---------- rendering ----------
+  function el(tag, attrs, children){
+    const e = document.createElement(tag);
+    attrs = attrs || {};
+    Object.keys(attrs).forEach(k=>{
+      if(k==="class") e.className = attrs[k];
+      else if(k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]);
+      else if(k==="style") e.setAttribute("style", attrs[k]);
+      else if(k.startsWith("disabled")) { if(attrs[k]) e.setAttribute("disabled","true"); }
+      else e.setAttribute(k, attrs[k]);
+    });
+    (children||[]).forEach(c=>{ if(c) e.appendChild(c); });
+    return e;
+  }
+  function txt(s){ return document.createTextNode(s); }
+
+  function renderNav(){
+    const nav = document.getElementById("nav");
+    nav.innerHTML = "";
+    // Once a draft has been generated, the Setup tab is hidden from the shared
+    // view — people picking games don't need to see or touch it. It's still
+    // reachable via the small "Edit setup" link at the bottom of Draft/Schedule.
+    const showSetupTab = state.order.length===0;
+    const tabs = showSetupTab
+      ? [{id:"setup",label:"Setup"},{id:"draft",label:"Draft"},{id:"results",label:"Schedule"}]
+      : [{id:"draft",label:"Draft"},{id:"results",label:"Schedule"}];
+    tabs.forEach(t=>{
+      const disabled = (t.id!=="setup") && state.order.length===0;
+      const b = el("button", {class: view===t.id?"active":"", onclick:()=>{ if(!disabled){ view=t.id; render(); } }}, [txt(t.label)]);
+      if(disabled) b.style.opacity="0.25";
+      nav.appendChild(b);
+    });
+  }
+
+  function renderAdminLink(){
+    return el("p", {style:"text-align:center;margin-top:18px;"}, [
+      el("a", {href:"#", style:"color:#5f8aa3;font-size:12px;text-decoration:underline;cursor:pointer;", onclick:(e)=>{e.preventDefault(); view="setup"; render();}}, [txt("Edit setup (owners, games, costs)")])
+    ]);
+  }
+
+  function renderSetup(){
+    const wrap = el("div", {});
+    wrap.appendChild(el("div",{class:"banner"},[
+      txt("Shared draft — anyone with this link can edit owners, games, and make picks. Owners are pre-loaded from your invoice; edit names or ticket counts if anything's off.")
+    ]));
+
+    // Owners
+    const ownersCard = el("div", {class:"card"});
+    ownersCard.appendChild(el("h2",{},[el("span",{class:"num"},[txt("1")]),txt("Owners & Ticket Counts")]));
+    state.owners.forEach(o=>{
+      const row = el("div",{class:"row"});
+      const nameInput = el("input",{type:"text", placeholder:"Name", value:o.name});
+      nameInput.addEventListener("input", e=>updateOwner(o.id,"name",e.target.value));
+      const ticketsInput = el("input",{type:"number", min:"0", step:"2", value:o.tickets});
+      ticketsInput.addEventListener("input", e=>{updateOwner(o.id,"tickets",e.target.value); refreshHint();});
+      const del = el("button",{class:"icon-btn", onclick:()=>removeOwner(o.id)},[txt("×")]);
+      row.appendChild(nameInput); row.appendChild(ticketsInput); row.appendChild(del);
+      ownersCard.appendChild(row);
+    });
+    ownersCard.appendChild(el("button",{class:"chip-btn", onclick:addOwner},[txt("+ Add Owner")]));
+    const hint = el("p",{class:"hint", id:"ownerHint"});
+    ownersCard.appendChild(hint);
+    wrap.appendChild(ownersCard);
+
+    function refreshHint(){
+      const h = document.getElementById("ownerHint");
+      if(!h) return;
+      h.textContent = `Total tickets: ${totalTickets()} · Games × 4 seats: ${state.games.length*4} · Ticket counts must be even (picks come in pairs). These two totals need to match to generate a draft.`;
+    }
+
+    // Games
+    const gamesCard = el("div", {class:"card"});
+    gamesCard.appendChild(el("h2",{},[el("span",{class:"num"},[txt("2")]),txt("Games & Costs")]));
+    gamesCard.appendChild(el("p",{class:"hint"},[txt(`Pool total: ${money(poolTotal())} across ${state.games.length} games. Cost shown per game — edit if a price changes.`)]));
+    state.games.forEach((g,i)=>{
+      const row = el("div",{class:"row"});
+      const labelSpan = el("span",{style:"flex:2;font-size:13px;"},[txt(`${i+1}. ${g.date} — ${gameLabel(g)}`)]);
+      const costInput = el("input",{type:"number", min:"0", step:"0.01", value:g.cost});
+      costInput.addEventListener("input", e=>updateGameCost(g.id, e.target.value));
+      row.appendChild(labelSpan); row.appendChild(costInput);
+      gamesCard.appendChild(row);
+    });
+    wrap.appendChild(gamesCard);
+
+    // Settings
+    const setCard = el("div",{class:"card"});
+    setCard.appendChild(el("h2",{},[el("span",{class:"num"},[txt("3")]),txt("Draft Format")]));
+    const grid = el("div",{class:"settings-grid"});
+    const startDiv = el("div",{});
+    startDiv.appendChild(el("label",{},[txt("Snake picks to start")]));
+    const startInput = el("input",{type:"number", min:"0", value:state.settings.snakeStart});
+    startInput.addEventListener("input", e=>{ state.settings.snakeStart=Math.max(0,parseInt(e.target.value)||0); saveState(); });
+    startDiv.appendChild(startInput);
+    const endDiv = el("div",{});
+    endDiv.appendChild(el("label",{},[txt("Snake picks to end")]));
+    const endInput = el("input",{type:"number", min:"0", value:state.settings.snakeEnd});
+    endInput.addEventListener("input", e=>{ state.settings.snakeEnd=Math.max(0,parseInt(e.target.value)||0); saveState(); });
+    endDiv.appendChild(endInput);
+    grid.appendChild(startDiv); grid.appendChild(endDiv);
+    setCard.appendChild(grid);
+    setCard.appendChild(el("p",{class:"hint"},[txt("A \u201cpick\u201d here is a pair of seats. Everyone snake-drafts pairs at the start and end; picks in between are handed out by random draw weighted by tickets remaining. On any turn, a person can instead take all 4 seats to one game \u2014 that uses up this turn AND their next turn.")]));
+    wrap.appendChild(setCard);
+
+    refreshHint();
+
+    const genBtn = el("button",{class:"btn-primary", disabled: !canGenerate()},[txt(state.order.length ? "Re-Generate Draft Order" : "Generate Draft Order")]);
+    genBtn.addEventListener("click", ()=>{ if(canGenerate()) generateDraft(); });
+    wrap.appendChild(genBtn);
+
+    if(!canGenerate()){
+      const reasons = [];
+      if(state.owners.length<2) reasons.push("add at least 2 owners");
+      if(!state.owners.every(o=>o.name.trim())) reasons.push("every owner needs a name");
+      if(!state.owners.every(o=>o.tickets>0 && o.tickets%2===0)) reasons.push("every owner's ticket count must be even and greater than 0");
+      if(state.games.length===0) reasons.push("add your games list");
+      if(totalTickets() !== state.games.length*4) reasons.push("total tickets must exactly equal games × 4");
+      wrap.appendChild(el("p",{class:"hint"},[txt("To generate: "+reasons.join("; "))]));
+    }
+
+    if(state.order.length>0){
+      const backBtn = el("button",{class:"btn btn-ghost", style:"width:100%;margin-top:10px;", onclick:()=>{ view = state.phase==="complete"?"results":"draft"; render(); }},[txt("← Back to Draft (without changes)")]);
+      wrap.appendChild(backBtn);
+      wrap.appendChild(el("p",{class:"hint"},[txt("Note: re-generating the draft order below will erase all current picks.")]));
+    }
+
+    return wrap;
+  }
+
+  function renderDraft(){
+    if(state.order.length===0){
+      return el("div",{class:"empty"},[el("span",{class:"display"},[txt("No draft yet")]),txt("Head to Setup and generate a draft order first.")]);
+    }
+    const wrap = el("div",{});
+    const idx = currentPickIndex();
+
+    const strip = el("div",{class:"order-strip"});
+    state.order.forEach((ownerId,i)=>{
+      const p = state.picks[i];
+      let cls = "pip";
+      if(p && p.type==="skip") cls += " skip";
+      else if(p) cls += " done";
+      if(i===idx) cls += " current";
+      strip.appendChild(el("div",{class:cls},[txt(ownerById(ownerId).name.slice(0,3))]));
+    });
+    wrap.appendChild(strip);
+
+    if(idx===-1){
+      wrap.appendChild(el("div",{class:"clock"},[
+        el("div",{class:"who"},[txt("Draft Complete \ud83c\udfd2")]),
+        el("div",{class:"subtxt"},[txt("Head to the Schedule tab to see the full board.")])
+      ]));
+    } else {
+      const ownerId = state.order[idx];
+      const owner = ownerById(ownerId);
+      wrap.appendChild(el("div",{class:"clock"},[
+        el("div",{class:"pickno"},[txt(`Pick ${idx+1} of ${state.order.length}`)]),
+        el("div",{class:"who"},[txt(owner.name)]),
+        el("div",{class:"subtxt"},[txt("is on the clock — pick 2 seats, or all 4 if available")])
+      ]));
+
+      const availableGames = state.games.filter(g=>g.remaining>0);
+      if(availableGames.length===0){
+        wrap.appendChild(el("p",{class:"hint"},[txt("No games left.")]));
+      } else {
+        const canTakeFour = nextTurnIndexFor(ownerId, idx) !== -1;
+        availableGames.forEach(g=>{
+          const gc = el("div",{class:"game-card"});
+          gc.appendChild(el("div",{class:"glabel"},[txt(gameLabel(g))]));
+          gc.appendChild(el("div",{class:"gdate"},[txt(`${g.date} · ${g.time} · ${g.remaining} seat${g.remaining===1?"":"s"} left`)]));
+          const btns = el("div",{class:"gbtns"});
+          const pairBtn = el("button",{class:"pickbtn", onclick:()=>claimPair(g.id)},[
+            txt("Take 2 Seats"), el("small",{},[txt(money(perSeat(g)*2))])
+          ]);
+          btns.appendChild(pairBtn);
+          if(g.remaining===4 && canTakeFour){
+            const fourBtn = el("button",{class:"pickbtn four", onclick:()=>claimFour(g.id)},[
+              txt("Take All 4 (skips next pick)"), el("small",{},[txt(money(g.cost))])
+            ]);
+            btns.appendChild(fourBtn);
+          }
+          gc.appendChild(btns);
+          wrap.appendChild(gc);
+        });
+      }
+    }
+
+    const actions = el("footer",{class:"actions"});
+    actions.appendChild(el("button",{class:"btn btn-ghost", onclick:undoLast},[txt("Undo Last Pick")]));
+    actions.appendChild(el("button",{class:"btn btn-ghost", onclick:reshuffle},[txt("Re-Roll Order")]));
+    wrap.appendChild(actions);
+    wrap.appendChild(renderAdminLink());
+    return wrap;
+  }
+
+  function renderResults(){
+    if(state.order.length===0){
+      return el("div",{class:"empty"},[el("span",{class:"display"},[txt("Nothing to show yet")]),txt("Generate a draft first.")]);
+    }
+    const wrap = el("div",{});
+    const doneCount = Object.keys(state.picks).length;
+    wrap.appendChild(el("div",{class:"banner"},[
+      txt(doneCount < state.order.length
+        ? `${doneCount} of ${state.order.length} picks made so far (pool total ${money(poolTotal())}). Head to the Draft tab to keep going.`
+        : `All picks are in. Pool total: ${money(poolTotal())}.`)
+    ]));
+
+    state.owners.forEach(o=>{
+      const myIdxs = state.order.map((id,i)=>id===o.id?i:null).filter(i=>i!==null);
+      const myPicks = myIdxs.map(i=>state.picks[i]).filter(p=>p && p.type!=="skip");
+      let ownerCost = 0;
+      const sec = el("div",{class:"results-owner"});
+      const seatsClaimed = myPicks.reduce((s,p)=>s + (p.type==="four"?4:2), 0);
+      sec.appendChild(el("h3",{},[
+        el("span",{},[txt(o.name)]),
+        el("span",{class:"total"},[txt("")])
+      ]));
+      const totalLabel = sec.querySelector(".total");
+      if(myPicks.length===0){
+        sec.appendChild(el("p",{class:"hint"},[txt("No games claimed yet.")]));
+      } else {
+        myPicks.forEach(p=>{
+          const g = gameById(p.gameId);
+          const seats = p.type==="four" ? 4 : 2;
+          const cost = perSeat(g)*seats;
+          ownerCost += cost;
+          sec.appendChild(el("div",{class:"list-item"},[
+            el("span",{},[txt(`${g.date} — ${gameLabel(g)}`)]),
+            el("span",{},[
+              el("span",{class:"owner-tag"},[txt(seats+" seats")]),
+              txt(" "),
+              el("span",{class:"cost-tag"},[txt(money(cost))])
+            ])
+          ]));
+        });
+      }
+      totalLabel.textContent = `${seatsClaimed}/${o.tickets} seats · ${money(ownerCost)}`;
+      wrap.appendChild(sec);
+    });
+
+    const actions = el("footer",{class:"actions"});
+    actions.appendChild(el("button",{class:"btn btn-ghost", onclick:resetAll},[txt("Start New Draft")]));
+    wrap.appendChild(actions);
+    wrap.appendChild(renderAdminLink());
+    return wrap;
+  }
+
+  function render(){
+    if(!loaded) return;
+    renderNav();
+    const main = document.getElementById("main");
+    main.innerHTML = "";
+    if(!BACKEND_READY){
+      main.appendChild(el("div",{class:"banner", style:"border-color:var(--red);"},[
+        txt("Setup isn't finished yet: no backend URL is configured, so nothing will save or sync between phones. This is a local preview only. See the setup guide to connect the free Google Sheet backend.")
+      ]));
+    } else if(saveError){
+      main.appendChild(el("div",{class:"banner", style:"border-color:var(--red);"},[
+        txt("Couldn't reach the backend just now — your last action may not have saved. Check your connection and try again.")
+      ]));
+    }
+    if(view==="setup") main.appendChild(renderSetup());
+    else if(view==="draft") main.appendChild(renderDraft());
+    else main.appendChild(renderResults());
+  }
+
+  loadState();
+  setInterval(async ()=>{
+    if(!loaded || !BACKEND_READY) return;
+    try{
+      const fresh = await remoteGet(STATE_KEY);
+      if(fresh && JSON.stringify(fresh) !== JSON.stringify(state)){
+        state = fresh;
+        render();
+      }
+      saveError = false;
+    }catch(e){}
+  }, 4000);
+})();
+</script>
+</body>
+</html>
