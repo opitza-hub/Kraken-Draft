@@ -290,7 +290,7 @@
     align-items:baseline;
     gap:8px;
   }
-  .results-owner h3 .total{font-family:'Barlow Condensed',sans-serif; font-size:14px; color:var(--gold);}
+  .results-owner h3 .total{font-family:'Barlow Condensed',sans-serif; font-size:14px; color:var(--red);}
 
   .empty{
     text-align:center;
@@ -315,6 +315,88 @@
     display:flex; gap:8px; margin-top:20px;
   }
   footer.actions .btn{flex:1;}
+
+  /* Confirm modal */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(2,10,24,0.75);
+    display:flex; align-items:center; justify-content:center;
+    z-index:100;
+    padding:20px;
+  }
+  .modal-card{
+    background:var(--deep2);
+    border:1px solid var(--ice);
+    border-radius:6px;
+    padding:22px;
+    max-width:400px;
+    width:100%;
+  }
+  .modal-card h3{
+    font-family:'Archivo Black',sans-serif;
+    font-size:18px;
+    margin:0 0 10px;
+    color:var(--ice);
+  }
+  .modal-card p{font-size:14px; line-height:1.5; color:var(--paper); margin:0 0 18px;}
+  .modal-card .modal-btns{display:flex; gap:10px;}
+  .modal-card .modal-btns .btn{flex:1;}
+
+  /* Hidden admin trigger */
+  .ghost-dot{
+    position:fixed;
+    bottom:10px;
+    right:14px;
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:transparent;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    z-index:50;
+    opacity:0.35;
+  }
+  .ghost-dot::after{
+    content:"";
+    display:block;
+    width:5px; height:5px;
+    margin:4.5px auto;
+    border-radius:50%;
+    background:var(--boreal);
+  }
+  .admin-menu{
+    position:fixed;
+    bottom:30px;
+    right:14px;
+    background:var(--deep2);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:6px;
+    z-index:51;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:170px;
+  }
+  .admin-menu button{
+    background:none; border:none; color:var(--paper);
+    text-align:left; padding:8px 10px; font-size:13px;
+    font-family:'Inter',sans-serif; cursor:pointer; border-radius:3px;
+  }
+  .admin-menu button:hover{background:var(--deep);}
+
+  /* Admin editor page */
+  .admin-row{
+    display:flex; gap:6px; align-items:center;
+    padding:8px 0; border-bottom:1px solid var(--line);
+    flex-wrap:wrap; font-size:13px;
+  }
+  .admin-row .pickno{min-width:80px; color:#8fb3c9; font-size:12px;}
+  .admin-row select{
+    background:var(--deep); color:var(--paper); border:1px solid var(--line);
+    border-radius:3px; padding:6px; font-size:13px; flex:1; min-width:140px;
+  }
 </style>
 </head>
 <body>
@@ -326,6 +408,7 @@
 
 <nav id="nav"></nav>
 <main id="main"></main>
+<div id="modal-root"></div>
 
 <script>
 (function(){
@@ -447,12 +530,28 @@
   function poolTotal(){ return state.games.reduce((s,g)=>s+(g.cost||0),0); }
 
   // ---------- draft order (in "turns"; 1 turn = 1 pair of seats) ----------
+  // Fixed base order for the snake rounds (matched against owner names below).
+  // Falls back to a random shuffle for any owner that doesn't match one of
+  // these names, so the app still works if names change later.
+  const FIXED_ORDER_NAMES = ["Ryan","Tim/Melissa","Kacie","Barber","Ku'ulei","Adam"];
+
   function buildDraftOrder(){
-    const owners = state.owners.map(o => ({id:o.id, remaining: Math.floor(o.tickets/2)}));
+    const owners = state.owners.map(o => ({id:o.id, name:o.name, remaining: Math.floor(o.tickets/2)}));
     const byId = Object.fromEntries(owners.map(o=>[o.id,o]));
+
+    const remainingPool = [...owners];
+    const orderedOwners = [];
+    FIXED_ORDER_NAMES.forEach(fname=>{
+      const idx = remainingPool.findIndex(o => o.name.toLowerCase().includes(fname.toLowerCase()));
+      if(idx !== -1){ orderedOwners.push(remainingPool[idx]); remainingPool.splice(idx,1); }
+    });
+    // Any owners that didn't match a fixed name (e.g. someone new was added)
+    // get shuffled in randomly after the fixed group.
+    remainingPool.sort(()=>Math.random()-0.5);
+    const finalOwnerOrder = orderedOwners.concat(remainingPool);
+
     let order = [];
-    const shuffled = [...owners].sort(()=>Math.random()-0.5);
-    const ids = shuffled.map(o=>o.id);
+    const ids = finalOwnerOrder.map(o=>o.id);
 
     function snakeRound(forward){
       const seq = forward ? ids : [...ids].slice().reverse();
@@ -586,6 +685,80 @@
     state.actionLog = [];
     state.phase = "setup";
     view = "setup";
+    saveState(); render();
+  }
+
+  // ---------- confirm modal ----------
+  let pendingAction = null; // {type:'pair'|'four', gameId}
+
+  function askConfirm(type, gameId){
+    pendingAction = {type, gameId};
+    render();
+  }
+  function cancelConfirm(){ pendingAction = null; render(); }
+  function confirmAction(){
+    if(!pendingAction) return;
+    const {type, gameId} = pendingAction;
+    pendingAction = null;
+    if(type==="pair") claimPair(gameId);
+    else if(type==="four") claimFour(gameId);
+  }
+
+  function renderConfirmModal(){
+    if(!pendingAction) return null;
+    const idx = currentPickIndex();
+    if(idx===-1){ pendingAction=null; return null; }
+    const owner = ownerById(state.order[idx]);
+    const g = gameById(pendingAction.gameId);
+    if(!g){ pendingAction=null; return null; }
+    const seats = pendingAction.type==="four" ? 4 : 2;
+    const cost = pendingAction.type==="four" ? g.cost : perSeat(g)*2;
+    const skipNote = pendingAction.type==="four" ? " This will also skip your next pick." : "";
+    const overlay = el("div",{class:"modal-overlay", onclick:(e)=>{ if(e.target===e.currentTarget) cancelConfirm(); }});
+    const card = el("div",{class:"modal-card"},[
+      el("h3",{},[txt("Confirm Pick")]),
+      el("p",{},[txt(`${owner.name}: take ${seats} seat${seats>1?"s":""} to ${gameLabel(g)} (${g.date}) for ${money(cost)}?${skipNote}`)]),
+      el("div",{class:"modal-btns"},[
+        el("button",{class:"btn btn-ghost", onclick:cancelConfirm},[txt("Cancel")]),
+        el("button",{class:"btn btn-primary", style:"width:auto;", onclick:confirmAction},[txt("Confirm Pick")])
+      ])
+    ]);
+    overlay.appendChild(card);
+    return overlay;
+  }
+
+  // ---------- admin: manual pick editor ----------
+  function recomputeGameRemaining(){
+    state.games.forEach(g=>g.remaining=4);
+    Object.values(state.picks).forEach(p=>{
+      if(p.type==="pair"){ const g=gameById(p.gameId); if(g) g.remaining -= 2; }
+      else if(p.type==="four"){ const g=gameById(p.gameId); if(g) g.remaining -= 4; }
+    });
+  }
+  function seatsAssignedToGame(gameId, excludeIdx){
+    let sum = 0;
+    Object.entries(state.picks).forEach(([i,p])=>{
+      if(Number(i)===excludeIdx) return;
+      if(p.gameId!==gameId) return;
+      sum += p.type==="four" ? 4 : (p.type==="pair" ? 2 : 0);
+    });
+    return sum;
+  }
+  function adminSetPick(idx, action, gameId, seats){
+    if(action==="clear"){
+      delete state.picks[idx];
+    } else if(action==="skip"){
+      state.picks[idx] = {type:"skip"};
+    } else {
+      const already = seatsAssignedToGame(gameId, idx);
+      if(already + seats > 4){
+        alert(`Can't assign ${seats} seats \u2014 that game already has ${already} of 4 seats claimed elsewhere.`);
+        return;
+      }
+      state.picks[idx] = {type: seats===4?"four":"pair", gameId};
+    }
+    recomputeGameRemaining();
+    state.phase = currentPickIndex()===-1 ? "complete" : "drafting";
     saveState(); render();
   }
 
@@ -725,15 +898,24 @@
     const idx = currentPickIndex();
 
     const strip = el("div",{class:"order-strip"});
+    let currentPip = null;
     state.order.forEach((ownerId,i)=>{
       const p = state.picks[i];
       let cls = "pip";
       if(p && p.type==="skip") cls += " skip";
       else if(p) cls += " done";
       if(i===idx) cls += " current";
-      strip.appendChild(el("div",{class:cls},[txt(ownerById(ownerId).name.slice(0,3))]));
+      const pipEl = el("div",{class:cls},[txt(ownerById(ownerId).name.slice(0,3))]);
+      if(i===idx) currentPip = pipEl;
+      strip.appendChild(pipEl);
     });
     wrap.appendChild(strip);
+    if(currentPip){
+      // Center the current pick in the scroll strip once it's in the DOM.
+      setTimeout(()=>{
+        currentPip.scrollIntoView({ behavior:"smooth", inline:"center", block:"nearest" });
+      }, 0);
+    }
 
     if(idx===-1){
       wrap.appendChild(el("div",{class:"clock"},[
@@ -759,12 +941,12 @@
           gc.appendChild(el("div",{class:"glabel"},[txt(gameLabel(g))]));
           gc.appendChild(el("div",{class:"gdate"},[txt(`${g.date} · ${g.time} · ${g.remaining} seat${g.remaining===1?"":"s"} left`)]));
           const btns = el("div",{class:"gbtns"});
-          const pairBtn = el("button",{class:"pickbtn", onclick:()=>claimPair(g.id)},[
+          const pairBtn = el("button",{class:"pickbtn", onclick:()=>askConfirm("pair", g.id)},[
             txt("Take 2 Seats"), el("small",{},[txt(money(perSeat(g)*2))])
           ]);
           btns.appendChild(pairBtn);
           if(g.remaining===4 && canTakeFour){
-            const fourBtn = el("button",{class:"pickbtn four", onclick:()=>claimFour(g.id)},[
+            const fourBtn = el("button",{class:"pickbtn four", onclick:()=>askConfirm("four", g.id)},[
               txt("Take All 4 (skips next pick)"), el("small",{},[txt(money(g.cost))])
             ]);
             btns.appendChild(fourBtn);
@@ -777,7 +959,6 @@
 
     const actions = el("footer",{class:"actions"});
     actions.appendChild(el("button",{class:"btn btn-ghost", onclick:undoLast},[txt("Undo Last Pick")]));
-    actions.appendChild(el("button",{class:"btn btn-ghost", onclick:reshuffle},[txt("Re-Roll Order")]));
     wrap.appendChild(actions);
     wrap.appendChild(renderAdminLink());
     return wrap;
@@ -852,6 +1033,11 @@
     if(view==="setup") main.appendChild(renderSetup());
     else if(view==="draft") main.appendChild(renderDraft());
     else main.appendChild(renderResults());
+
+    const modalRoot = document.getElementById("modal-root");
+    modalRoot.innerHTML = "";
+    const modal = renderConfirmModal();
+    if(modal) modalRoot.appendChild(modal);
   }
 
   loadState();
